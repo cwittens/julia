@@ -1069,15 +1069,19 @@ function typeinf_type(interp::AbstractInterpreter, mi::MethodInstance)
     return widenconst(ignorelimited(result.result))
 end
 
+function module_world(m::Module)
+    return ccall(:jl_module_world, Csize_t, (Any,), m)
+end
+
 # This is a bridge for the C code calling `jl_typeinf_func()`
 function typeinf_ext_toplevel(compiler::CompilerInstance, mi::MethodInstance, world::UInt)
     if compiler === nothing
         return typeinf_ext_toplevel(abstract_interpreter(compiler, world), mi)
     else
-        # XXX: Instead of invokelatest we should freeze the world
-        #      Maybe primary_world(typeof(compiler).name.module)
-        absint = invokelatest(abstract_interpreter, compiler, world)
-        return invokelatest(typeinf_ext_toplevel, absint, mi)
+        world = module_world(typeof(compiler).name.module)
+        # XXX: What if the module isn't closed
+        absint = Core._call_in_world(world, abstract_interpreter, compiler, world)
+        return Core._call_in_world(world, typeinf_ext_toplevel, absint, mi)
     end
 end
 
