@@ -1078,10 +1078,10 @@ function typeinf_ext_toplevel(compiler::CompilerInstance, mi::MethodInstance, wo
     if compiler === nothing
         return typeinf_ext_toplevel(abstract_interpreter(compiler, world), mi)
     else
-        world = module_world(typeof(compiler).name.module)
+        compiler_world = module_world(typeof(compiler).name.module)
         # XXX: What if the module isn't closed
-        absint = Core._call_in_world(world, abstract_interpreter, compiler, world)
-        return Core._call_in_world(world, typeinf_ext_toplevel, absint, mi)
+        absint = Core._call_in_world(compiler_world, abstract_interpreter, compiler, world)
+        return Core._call_in_world(compiler_world, typeinf_ext_toplevel, absint, mi)
     end
 end
 
