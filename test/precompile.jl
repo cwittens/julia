@@ -407,11 +407,11 @@ precompile_test_harness(false) do dir
         else
             ocachefile = nothing
         end
-            # use _require_from_serialized to ensure that the test fails if
-            # the module doesn't reload from the image:
+        # use _require_from_serialized to ensure that the test fails if
+        # the module doesn't reload from the image:
         @test_warn "@ccallable was already defined for this method name" begin
             @test_logs (:warn, "Replacing module `$Foo_module`") begin
-                m = Base._require_from_serialized(Base.PkgId(Foo), cachefile, ocachefile)
+                m = Base._require_from_serialized(Base.PkgId(Foo), cachefile, ocachefile, Foo_file)
                 @test isa(m, Module)
             end
         end
@@ -1853,7 +1853,7 @@ precompile_test_harness("PkgCacheInspector") do load_path
         depmods = Vector{Any}(undef, ndeps)
         for i in 1:ndeps
             modkey, build_id = depmodnames[i]
-            dep = Base._tryrequire_from_serialized(modkey, build_id)
+            dep = Base._tryrequire_from_serialized(modkey, build_id, false)
             if !isa(dep, Module)
                 return dep
             end
