@@ -3,7 +3,7 @@ module MultilineFusion
 export multiline_fusion
 
 function multiline_fusion(f, args...)
-    Base.invoke_within(MultilineFusion(), f, args...)
+    Base.invoke_within(MLFCompiler(), f, args...)
 end
 
 const CC = Core.Compiler
@@ -25,7 +25,7 @@ struct MLFInterp <: CC.AbstractInterpreter
     inf_params::CC.InferenceParams
     opt_params::CC.OptimizationParams
     inf_cache::Vector{CC.InferenceResult}
-    function MLFInterp(compiler::MLFCompiler;
+    function MLFInterp(compiler::MLFCompiler = MLFCompiler();
                 world::UInt = Base.get_world_counter(),
                 inf_params::CC.InferenceParams = CC.InferenceParams(),
                 opt_params::CC.OptimizationParams = CC.OptimizationParams(),
