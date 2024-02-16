@@ -504,3 +504,11 @@ function disable_library_threading()
     end
     return
 end
+
+function init_julia_debug()
+    global julia_debug
+    opt_julia_debug = Base.JLOptions().julia_debug
+    if opt_julia_debug == 0 || (Base.generating_output() && opt_julia_debug == 1)
+        julia_debug = false
+    end
+end

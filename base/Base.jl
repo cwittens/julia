@@ -121,6 +121,29 @@ function setpropertyonce!(x::Module, f::Symbol, desired, success_order::Symbol=:
     return Core.setglobalonce!(x, f, val, success_order, fail_order)
 end
 
+julia_debug::Bool = true
+
+"""
+    isdebug() -> Bool
+
+Return if the julia session is running in debug mode.
+In debug mode `@assert`s are enabled and `isdebug()` returns `true`.
+This is a compile time
+
+Packages are
+
+A useful pattern is
+
+```
+@static if isdebug()
+    # code that is only enabled in debug mode
+end
+```
+A useful pattern is
+
+"""
+isdebug() = julia_debug
+
 
 convert(::Type{Any}, Core.@nospecialize x) = x
 convert(::Type{T}, x::T) where {T} = x
@@ -649,6 +672,7 @@ end
 function __init__()
     # Base library init
     global _atexit_hooks_finished = false
+    init_julia_debug()
     Filesystem.__postinit__()
     reinit_stdio()
     Multimedia.reinit_displays() # since Multimedia.displays uses stdout as fallback

@@ -2828,7 +2828,7 @@ end
 
 
 function parse_cache_header(f::IO, cachefile::AbstractString)
-    flags = read(f, UInt8)
+    flags = read(f, UInt16)
     modules = Vector{Pair{PkgId, UInt64}}()
     while true
         n = read(f, Int32)
@@ -3213,24 +3213,38 @@ function check_clone_targets(clone_targets)
 end
 
 struct CacheFlags
-    # OOICCDDP - see jl_cache_flags
+    # OOJICCDDP - see jl_cache_flags
     use_pkgimages::Bool
     debug_level::Int
     check_bounds::Int
     inline::Bool
+    julia_debug::Bool
     opt_level::Int
-
-    function CacheFlags(f::UInt8)
-        use_pkgimages = Bool(f & 1)
-        debug_level = Int((f >> 1) & 3)
-        check_bounds = Int((f >> 3) & 3)
-        inline = Bool((f >> 5) & 1)
-        opt_level = Int((f >> 6) & 3) # define OPT_LEVEL in statiddata_utils
-        new(use_pkgimages, debug_level, check_bounds, inline, opt_level)
-    end
 end
-CacheFlags(f::Int) = CacheFlags(UInt8(f))
-CacheFlags() = CacheFlags(ccall(:jl_cache_flags, UInt8, ()))
+
+function CacheFlags(f::UInt16)
+    use_pkgimages = Bool(f & 1)
+    debug_level = Int((f >> 1) & 3)
+    check_bounds = Int((f >> 3) & 3)
+    inline = Bool((f >> 5) & 1)
+    julia_debug = Bool((f >> 6) & 1)
+    opt_level = Int((f >> 7) & 3)
+    CacheFlags(use_pkgimages, debug_level, check_bounds, inline, julia_debug, opt_level)
+end
+
+CacheFlags(f::Int) = CacheFlags(UInt16(f))
+CacheFlags() = CacheFlags(ccall(:jl_cache_flags, UInt16, ()))
+
+function _cacheflag_to_uint16(cf::CacheFlags)::UInt16
+    f = UInt16(0)
+    f |= UInt16(cf.use_pkgimages) << 0
+    f |= UInt16(cf.debug_level) << 1
+    f |= UInt16(cf.check_bounds) << 3
+    f |= UInt16(cf.inline) << 5
+    f |= UInt16(cf.julia_debug) << 6
+    f |= UInt16(cf.opt_level) << 7
+    return f
+end
 
 function show(io::IO, cf::CacheFlags)
     print(io, "use_pkgimages = ", cf.use_pkgimages)
@@ -3394,7 +3408,7 @@ end
         if isempty(modules)
             return true # ignore empty file
         end
-        if ccall(:jl_match_cache_flags, UInt8, (UInt8,), flags) == 0
+        if ccall(:jl_match_cache_flags, UInt16, (UInt16,), flags) == 0
             @debug """
             Rejecting cache file $cachefile for $modkey since the flags are mismatched
               current session: $(CacheFlags())
